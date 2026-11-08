@@ -15,6 +15,7 @@
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; scroll-padding-top: 86px; }
 body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 15px; -webkit-font-smoothing: antialiased; }
+main > section[hidden] { display: none !important; }
 a { color: inherit; text-decoration: none; }
 button, input, textarea { font: inherit; }
 img { display: block; width: 100%; }

@@ -1,5 +1,24 @@
 const menuToggle = document.querySelector(".menu-toggle");
 const navigation = document.querySelector(".primary-navigation");
+const main = document.querySelector("main");
+const sectionPanels = [...main.querySelectorAll(":scope > section:not(#home)")];
+
+function showSectionFromHash(hash) {
+  const targetId = hash.slice(1);
+  const target = targetId ? document.getElementById(targetId) : null;
+  const activeSection = target?.parentElement === main && target.id !== "home" ? target : null;
+
+  sectionPanels.forEach((section) => {
+    section.hidden = section !== activeSection;
+  });
+}
+
+showSectionFromHash(window.location.hash);
+window.addEventListener("hashchange", () => showSectionFromHash(window.location.hash));
+document.addEventListener("click", (event) => {
+  const link = event.target.closest('a[href^="#"]');
+  if (link) showSectionFromHash(link.getAttribute("href"));
+});
 
 menuToggle.addEventListener("click", () => {
   const isExpanded = menuToggle.getAttribute("aria-expanded") === "true";
