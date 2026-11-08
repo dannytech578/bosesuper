@@ -799,3 +799,22 @@ h2 em { color: #778071; }
   .gallery-lightbox-image { height: min(72dvh, 620px); }
   .gallery-lightbox-caption { font-size: 14px; }
 }
+@media (max-width: 680px) {
+  .footer-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 8px;
+  }
+  .footer-main > .footer-wordmark { grid-column: 1; grid-row: 1; }
+  .footer-main > p { grid-column: 1; grid-row: 2; }
+  .footer-socials {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    display: grid;
+    grid-template-columns: repeat(2, 42px);
+    gap: 9px;
+    justify-self: end;
+  }
+}
