@@ -1,15 +1,18 @@
 const menuToggle = document.querySelector(".menu-toggle");
 const navigation = document.querySelector(".primary-navigation");
 const main = document.querySelector("main");
-const sectionPanels = [...main.querySelectorAll(":scope > section:not(#home)")];
+const homeSection = document.getElementById("home");
+const sectionPanels = [...main.querySelectorAll(":scope > section")];
 
 function showSectionFromHash(hash) {
-  const targetId = hash.slice(1);
-  const target = targetId ? document.getElementById(targetId) : null;
-  const activeSection = target?.parentElement === main && target.id !== "home" ? target : null;
+  const targetId = (hash || "").replace(/^#/, "").trim();
+  const requestedSection = targetId ? document.getElementById(targetId) : homeSection;
+  const activeSection = requestedSection && requestedSection.parentElement === main ? requestedSection : homeSection;
 
   sectionPanels.forEach((section) => {
-    section.hidden = section !== activeSection;
+    const isActive = section === activeSection;
+    section.hidden = !isActive;
+    section.setAttribute("aria-hidden", String(!isActive));
   });
 }
 
@@ -20,40 +23,115 @@ document.addEventListener("click", (event) => {
   if (link) showSectionFromHash(link.getAttribute("href"));
 });
 
+function closeNavigation() {
+  menuToggle.setAttribute("aria-expanded", "false");
+  menuToggle.setAttribute("aria-label", "Open navigation");
+  navigation.classList.remove("is-open");
+}
+
 menuToggle.addEventListener("click", () => {
   const isExpanded = menuToggle.getAttribute("aria-expanded") === "true";
-  menuToggle.setAttribute("aria-expanded", String(!isExpanded));
-  menuToggle.setAttribute("aria-label", isExpanded ? "Open navigation" : "Close navigation");
-  navigation.classList.toggle("is-open", !isExpanded);
+  if (isExpanded) {
+    closeNavigation();
+    return;
+  }
+  menuToggle.setAttribute("aria-expanded", "true");
+  menuToggle.setAttribute("aria-label", "Close navigation");
+  navigation.classList.add("is-open");
 });
 
 navigation.addEventListener("click", (event) => {
-  if (event.target.closest("a")) {
-    menuToggle.setAttribute("aria-expanded", "false");
-    menuToggle.setAttribute("aria-label", "Open navigation");
-    navigation.classList.remove("is-open");
+  if (event.target.closest("a")) closeNavigation();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && menuToggle.getAttribute("aria-expanded") === "true") {
+    closeNavigation();
+    menuToggle.focus();
   }
 });
+
+document.addEventListener("click", (event) => {
+  if (
+    menuToggle.getAttribute("aria-expanded") === "true" &&
+    !navigation.contains(event.target) &&
+    !menuToggle.contains(event.target)
+  ) {
+    closeNavigation();
+  }
+});
+
+window.addEventListener("resize", () => {
+  if (window.matchMedia("(min-width: 681px)").matches) closeNavigation();
+});
+
+const videoCards = [...document.querySelectorAll(".video-card")];
+
+function loadVideoPreview(card) {
+  const preview = card.querySelector(".video-card-preview");
+  if (!preview || preview.hasAttribute("src")) return;
+
+  preview.addEventListener("loadeddata", () => {
+    preview.classList.add("is-ready");
+  }, { once: true });
+  preview.addEventListener("loadedmetadata", () => {
+    if (Number.isFinite(preview.duration) && preview.duration > 1) {
+      preview.currentTime = Math.min(1, preview.duration / 4);
+    }
+  }, { once: true });
+  preview.src = card.dataset.videoSrc;
+  preview.load();
+}
+
+if ("IntersectionObserver" in window) {
+  const videoPreviewObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        loadVideoPreview(entry.target);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { rootMargin: "160px" });
+  videoCards.forEach((card) => videoPreviewObserver.observe(card));
+} else {
+  videoCards.forEach(loadVideoPreview);
+}
 
 const videoDialog = document.querySelector(".video-dialog");
 const demoVideo = videoDialog.querySelector("video");
 const dialogTitle = videoDialog.querySelector(".dialog-title");
+const dialogNote = videoDialog.querySelector(".dialog-note");
 
-document.querySelectorAll(".video-card").forEach((card) => {
+videoCards.forEach((card) => {
   card.addEventListener("click", () => {
     dialogTitle.textContent = card.dataset.videoTitle;
+    dialogNote.textContent = "";
+    demoVideo.defaultMuted = false;
+    demoVideo.muted = false;
+    demoVideo.volume = 1;
+    demoVideo.src = card.dataset.videoSrc;
+    demoVideo.load();
     videoDialog.showModal();
-    demoVideo.play().catch(() => {
-      // Playback remains available through the visible video controls.
+    demoVideo.play().catch((error) => {
+      dialogNote.textContent = "The video could not start automatically. Use the player controls to try again.";
+      console.warn(`Could not autoplay ${card.dataset.videoTitle}.`, error);
     });
   });
 });
 
 function closeVideoDialog() {
   demoVideo.pause();
-  demoVideo.currentTime = 0;
+  demoVideo.removeAttribute("src");
+  demoVideo.load();
   videoDialog.close();
 }
+
+demoVideo.addEventListener("error", () => {
+  const mediaError = demoVideo.error;
+  if (!mediaError) return;
+  dialogNote.textContent = "This video could not be loaded. Please check that the video file is available.";
+  console.error("Could not load selected video.", mediaError);
+});
 
 videoDialog.querySelector(".dialog-close").addEventListener("click", closeVideoDialog);
 videoDialog.addEventListener("click", (event) => {
@@ -61,7 +139,8 @@ videoDialog.addEventListener("click", (event) => {
 });
 videoDialog.addEventListener("close", () => {
   demoVideo.pause();
-  demoVideo.currentTime = 0;
+  demoVideo.removeAttribute("src");
+  demoVideo.load();
 });
 
 const galleryItems = [...document.querySelectorAll(".gallery-card")];
@@ -75,9 +154,10 @@ function showGalleryImage(index) {
   activeGalleryIndex = (index + galleryItems.length) % galleryItems.length;
   const item = galleryItems[activeGalleryIndex];
   const image = item.querySelector("img");
-  galleryLightboxImage.src = image.src;
+  const caption = item.querySelector(".gallery-caption");
+  galleryLightboxImage.src = image.dataset.full || image.src;
   galleryLightboxImage.alt = image.alt;
-  galleryLightboxCaption.textContent = item.querySelector(".gallery-caption").textContent;
+  galleryLightboxCaption.textContent = caption?.textContent || "";
   galleryLightboxCount.textContent = `Image ${activeGalleryIndex + 1} of ${galleryItems.length}`;
 }
 
@@ -113,11 +193,10 @@ document.querySelector("#booking-form").addEventListener("submit", (event) => {
   event.preventDefault();
   const form = event.currentTarget;
   const formData = new FormData(form);
-  const subject = encodeURIComponent(`Evang. Bose Super enquiry from ${formData.get("name")}`);
-  const body = encodeURIComponent(
-    `Name: ${formData.get("name")}\nEmail: ${formData.get("email")}\n\n${formData.get("message")}`,
+  const message = encodeURIComponent(
+    `Website enquiry for Evang. Bose Super\nName: ${formData.get("name")}\nEmail: ${formData.get("email")}\n\n${formData.get("message")}`,
   );
-  window.location.href = `mailto:hello@bosesuper.com?subject=${subject}&body=${body}`;
+  window.location.href = `https://wa.me/2348088048537?text=${message}`;
 });
 
 document.querySelector("#year").textContent = new Date().getFullYear();
