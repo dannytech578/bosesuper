@@ -14,7 +14,9 @@
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; scroll-padding-top: 86px; }
-body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 15px; -webkit-font-smoothing: antialiased; }
+body { min-height: 100vh; margin: 0; display: flex; flex-direction: column; background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 15px; -webkit-font-smoothing: antialiased; }
+main { flex: 1 0 auto; display: flex; flex-direction: column; }
+main > section:not([hidden]) { flex: 1 0 auto; }
 main > section[hidden] { display: none !important; }
 a { color: inherit; text-decoration: none; }
 button, input, textarea { font: inherit; }
@@ -534,7 +536,7 @@ h2 em { color: #778071; }
   .scroll-cue { bottom: 24px; left: 7%; }
   .section-wrap { padding-right: 7%; padding-left: 7%; }
   .intro { padding-top: 73px; padding-bottom: 70px; }
-  .intro-content { margin: 26px 0 30px; }
+  .intro-content { margin: 26px 0 30px; row-gap: 16px; }
   .intro-text p { font-size: 15px; line-height: 1.75; }
   .intro-text .lead { font-size: 20px; }
   .about-photo { height: 285px; }
