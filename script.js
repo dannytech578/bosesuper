@@ -274,7 +274,7 @@ window.addEventListener("resize", updateScrollProgress);
 updateScrollProgress();
 
 const revealElements = document.querySelectorAll(
-  ".section-kicker, .intro-content, .section-heading, .annual-concert, .video-card, .gallery-card, .music-copy, .music-art, .platform-list, .booking-copy, .booking-form",
+  ".section-kicker, .intro-content, .foundation-heading, .foundation-grid, .foundation-copy, .section-heading, .annual-concert, .video-card, .gallery-card, .music-copy, .music-art, .platform-list, .booking-copy, .booking-form",
 );
 
 if (window.matchMedia("(prefers-reduced-motion: no-preference)").matches && "IntersectionObserver" in window) {
